@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Worker SSE Demo</title>
+</head>
+<body>
+    <h1>Service Worker SSE Demo</h1>
+    <div id="messages"></div>
+    <button id="enable-notifications">Enable Notifications</button>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => {
+                    console.log('Service Worker registered', reg);
+                    if (reg.active) {
+                        navigator.serviceWorker.controller.postMessage({ type: 'START_SSE' });
+                    }
+                })
+                .catch(err => console.log('Service Worker registration failed', err));
+
+            navigator.serviceWorker.addEventListener('message', event => {
+                const messagesDiv = document.getElementById('messages');
+                messagesDiv.innerHTML += `<p>${event.data}</p>`;
+                if (Notification.permission === 'granted') {
+                    navigator.serviceWorker.controller.postMessage(event.data);
+                }
+            });
+        }
+
+        document.getElementById('enable-notifications').addEventListener('click', () => {
+            if (Notification.permission === 'default' || Notification.permission === 'denied') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        alert('Notifications enabled');
+                    }
+                });
+            } else {
+                alert('Notifications are already enabled');
+            }
+        });
+    </script>
+</body>
+</html>
